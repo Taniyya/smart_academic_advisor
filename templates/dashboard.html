@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 10px;">Student Performance Dashboard</h1>
+        <div style="text-align: center; margin-bottom: 30px;">
+            <a href="/analytics" class="btn" style="background-color: #1e293b; color: white; font-size: 0.95rem; padding: 10px 20px;">
+                &#128200; View Global AI Analytics
+            </a>
+        </div>
+        <div class="card">
+            <label for="student-select">Select Student:</label>
+            <select id="student-select">
+                {% for student in students %}
+                <option value="{{ student.id }}">{{ student.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="card" id="student-info">
+            <h2>Student Information</h2>
+            <p><strong>ID:</strong> <span id="student-id"></span></p>
+            <p><strong>Gender:</strong> <span id="student-gender"></span></p>
+            <p><strong>Attendance:</strong> <span id="student-attendance"></span>%</p>
+            <p><strong>Internal Marks:</strong> <span id="student-internal"></span></p>
+        </div>
+
+        <div class="card" id="performance-summary">
+            <h2>Performance Summary</h2>
+            <p><strong>Average SGPA:</strong> <span id="avg-sgpa"></span></p>
+            <p><strong>Best Semester:</strong> <span id="best-sem"></span></p>
+            <p><strong>Category:</strong> <span id="category"></span></p>
+        </div>
+
+        <div class="card">
+            <h2>Semester-wise Performance</h2>
+            <canvas id="performanceChart"></canvas>
+        </div>
+
+        <div class="text-center" style="margin-top: 40px; padding-bottom: 40px;">
+            <a href="#" id="dynamic-qa-btn" class="btn" style="display: none; padding: 16px 40px; font-size: 1.2rem;">Proceed to Q&A Evaluation &rarr;</a>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

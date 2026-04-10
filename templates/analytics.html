@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global AI Analytics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 1000px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 style="margin-bottom: 0;">&#128200; Global AI Analytics Overview</h1>
+            <a href="/dashboard" class="btn" style="background-color: #4a4a4a; color: white;">&larr; Back to Dashboard</a>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Ensemble Voting Classifier Matrix</h2>
+            <p style="color: #4a4a4a; font-size: 0.95em;">The dataset is currently evaluated by a mathematically resilient 4-model fusion ensemble utilizing Random Forest, Support Vector Machine (SVM), Gradient Boosting, and Gaussian Naive Bayes components to eliminate localized anomaly bias.</p>
+        </div>
+
+        <div class="charts-grid">
+            <div class="card">
+                <h3>Global Predicted Career Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="careerChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>CGPA Distribution across Sectors</h3>
+                <div class="chart-container">
+                    <canvas id="cgpaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/analytics_data')
+                .then(response => response.json())
+                .then(data => {
+                    // Career Distribution Pie Chart
+                    const ctx1 = document.getElementById('careerChart').getContext('2d');
+                    new Chart(ctx1, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.careers.labels,
+                            datasets: [{
+                                data: data.careers.values,
+                                backgroundColor: [
+                                    '#2563eb', // Royal Blue
+                                    '#1e40af', // Darker Blue
+                                    '#60a5fa', // Light Blue
+                                    '#93c5fd'  // Pale Blue
+                                ],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom', labels: { font: { family: "'Lora', serif" }, color: '#4a4a4a' } }
+                            }
+                        }
+                    });
+
+                    // CGPA vs Career Bar Chart
+                    const ctx2 = document.getElementById('cgpaChart').getContext('2d');
+                    new Chart(ctx2, {
+                        type: 'bar',
+                        data: {
+                            labels: data.cgpa.labels,
+                            datasets: [{
+                                label: 'Average CGPA',
+                                data: data.cgpa.values,
+                                backgroundColor: 'rgba(37, 99, 235, 0.85)',
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: false, suggestedMin: 5 }
+                            },
+                            plugins: {
+                                legend: { display: false }
+                            }
+                        }
+                    });
+                });
+        });
+    </script>
+</body>
+</html>

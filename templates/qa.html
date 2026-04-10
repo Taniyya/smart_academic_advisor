@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q&A Guidance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Q&A-Based Guidance</h1>
+        <a href="/" class="btn-back">&larr; Back to Dashboard</a>
+        <form id="qa-form">
+            <input type="hidden" id="studentId" value="{{ student_id }}">
+            {% for q in questions %}
+            <div class="card">
+                <label>{{ q.label }}</label>
+                <select name="{{ q.id }}" required>
+                    <option value="">Select</option>
+                    {% for opt in q.options %}
+                    <option value="{{ opt.value }}">{{ opt.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('qa-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const answers = {};
+            for (let [key, value] of formData.entries()) {
+                answers[key] = value;
+            }
+            localStorage.setItem('qa_answers', JSON.stringify(answers));
+            localStorage.setItem('selected_student', document.getElementById('studentId').value);
+            window.location.href = '/result';
+        });
+    </script>
+</body>
+</html>

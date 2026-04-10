@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Recommendations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Final Career Recommendations</h1>
+        <div class="card" id="recommendations">
+            <h2>Recommended Career Path</h2>
+            <p id="career-rec"></p>
+
+            <div id="ai-breakdown-container" style="display: none; margin-top: 25px; padding: 15px; background: rgba(37, 99, 235, 0.05); border-left: 4px solid #2563eb; border-radius: 4px;">
+                <h3 style="margin-top: 0; color: #2563eb; font-size: 1.1em;">AI Ensemble Breakdown</h3>
+                <p style="font-size: 0.9em; color: #4a4a4a; margin-bottom: 10px;">How the 4 models voted internally:</p>
+                <ul id="ai-list" style="list-style-type: none; padding: 0; margin: 0; font-size: 0.9em;"></ul>
+            </div>
+
+            <h3 style="margin-top: 25px;">Skills to Learn</h3>
+            <ul id="skills-list"></ul>
+            <h3>Improvement Suggestions</h3>
+            <ul id="improvements-list"></ul>
+        </div>
+        <a href="/dashboard" class="btn">Back to Dashboard</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const qaAnswers = JSON.parse(localStorage.getItem('qa_answers') || '{}');
+            const studentId = localStorage.getItem('selected_student') || 'S1'; // Default to first student
+
+            fetch(`/get_recommendations/${studentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(qaAnswers)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('career-rec').textContent = data.career;
+                const skillsList = document.getElementById('skills-list');
+                data.skills.forEach(skill => {
+                    const li = document.createElement('li');
+                    li.textContent = skill;
+                    skillsList.appendChild(li);
+                });
+                const improvementsList = document.getElementById('improvements-list');
+                data.improvements.forEach(improvement => {
+                    const li = document.createElement('li');
+                    li.textContent = improvement;
+                    improvementsList.appendChild(li);
+                });
+
+                // Display AI Breakdown
+                if (data.ai_breakdown && Object.keys(data.ai_breakdown).length > 0) {
+                    document.getElementById('ai-breakdown-container').style.display = 'block';
+                    const aiList = document.getElementById('ai-list');
+                    for (const [model, vote] of Object.entries(data.ai_breakdown)) {
+                        const li = document.createElement('li');
+                        li.style.marginBottom = '5px';
+                        li.innerHTML = `<strong>${model}</strong>: <span style="color: #2563eb;">${vote}</span>`;
+                        aiList.appendChild(li);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
