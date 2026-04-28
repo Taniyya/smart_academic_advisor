@@ -41,6 +41,13 @@ function loadStudentData() {
             const qaBtn = document.getElementById('dynamic-qa-btn');
             qaBtn.href = `/qa/${studentId}`;
             qaBtn.style.display = 'inline-flex';
+
+            // Bind Advisor Chat button
+            const chatBtn = document.getElementById('advisor-chat-btn');
+            if (chatBtn) {
+                chatBtn.href = `/advisor/${studentId}`;
+                chatBtn.style.display = 'inline-flex';
+            }
         });
 }
 

@@ -10,6 +10,27 @@ from sklearn.metrics import accuracy_score
 import joblib
 import sqlite3
 import os
+from dotenv import load_dotenv
+import google.generativeai as genai
+
+load_dotenv()
+if os.getenv("GEMINI_API_KEY") and os.getenv("GEMINI_API_KEY") != "your_api_key_here":
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+ADVISOR_SYSTEM_PROMPT = """You are a highly advanced AI-powered Academic Advisor integrated into the Smart Academic Advisor system. Your persona is similar to ChatGPT—helpful, extremely intelligent, highly conversational, and warm.
+
+Objective:
+Provide world-class, deeply thoughtful guidance to students in their academic journey by analyzing their specific context, interests, performance, and challenges.
+
+Instructions:
+1. Conversational & Empathetic: Adopt a very warm, human-like, and mentoring tone. Speak directly to the student as if you are a highly supportive, knowledgeable professor.
+2. In-Depth Analysis: Do not just give short answers. Provide highly detailed breakdowns of what the student's specific marks and attendance mean for their future.
+3. Comprehensive Advice: If a student has a weak subject, give them a highly structured, step-by-step study plan including time-management strategies.
+4. Professional Formatting: Use rich Markdown formatting! Use bold text for emphasis, bulleted lists for actionable steps, structured headers, and emojis to keep things engaging.
+5. Be Thorough: Detail the *why* and *how* for all your suggestions, offering concrete real-world examples.
+
+Goal: Deliver deeply insightful, comprehensive, and high-quality responses that provide immense value and clarity.
+"""
 
 app = Flask(__name__)
 
@@ -350,9 +371,83 @@ def analytics_data():
         "cgpa": {"labels": cgpa_labels, "values": cgpa_values}
     })
 
+@app.route('/advisor/<student_id>')
+def advisor(student_id):
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('SELECT Student_ID FROM students WHERE Student_ID = ?', (student_id,))
+    row = c.fetchone()
+    conn.close()
+    
+    if not row:
+        return "Student not found", 404
+        
+    return render_template('chat.html', student_id=student_id)
+
+@app.route('/api/chat/<student_id>', methods=['POST'])
+def chat_api(student_id):
+    data = request.get_json()
+    history = data.get('history', [])
+    message = data.get('message', '')
+
+    if not message:
+        return jsonify({"error": "No message provided"}), 400
+
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('SELECT Gender, "Attendance_%", Internal_Marks, Sem1, Sem2, Sem3, Sem4, Sem5, Sem6, Average_Marks, CGPA, Grade, Career_Suggestion FROM students WHERE Student_ID = ?', (student_id,))
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"error": "Student not found"}), 404
+
+    student_context = f"""
+--- CURRENT STUDENT CONTEXT ---
+Student ID: {student_id}
+Gender: {row[0]}
+Attendance: {row[1]}%
+Internal Marks: {row[2]}
+Sem 1 to 6 Marks: {row[3]}, {row[4]}, {row[5]}, {row[6]}, {row[7]}, {row[8]}
+Average Marks: {row[9]:.2f}
+CGPA: {row[10]}
+Grade: {row[11]}
+Predicted Career Path: {row[12]}
+-------------------------------
+Please use this specific performance data to inform your advice.
+"""
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key or api_key == "your_api_key_here":
+        return jsonify({"response": "Oops! The Gemini API Key has not been configured in the `.env` file yet. Please set it so I can assist you!"})
+
+    try:
+        model = genai.GenerativeModel(
+            model_name='gemini-flash-latest',
+            system_instruction=ADVISOR_SYSTEM_PROMPT + student_context
+        )
+        
+        formatted_history = []
+        for msg in history:
+            role = "user" if msg["sender"] == "user" else "model"
+            formatted_history.append({"role": role, "parts": [msg["text"]]})
+
+        chat = model.start_chat(history=formatted_history)
+        response = chat.send_message(message)
+
+        return jsonify({"response": response.text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     init_db()
     load_data_to_db()
     if not os.path.exists('model/trained_model.pkl'):
         train_model()
+    
+    # Automatically open the browser
+    import threading
+    import webbrowser
+    threading.Timer(1.25, lambda: webbrowser.open('http://127.0.0.1:5000')).start()
+    
     app.run(debug=True, use_reloader=False)
